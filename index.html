@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload de Arquivo para Firebase</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-6 rounded shadow-md w-full max-w-md">
+      <h2 class="text-3xl font-bold my-4">Upload Vídeo</h2>
+      <input
+        type="file"
+        id="fileInput"
+        accept="video/mp4"
+        class="block w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 cursor-pointer focus:outline-none"
+      />
+      <button
+        id="uploadButton"
+        class="mt-10 w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600"
+      >
+        Enviar
+      </button>
+      <p id="statusMessage" class="mt-4 text-green-700"></p>
+    </div>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+
+      import {
+        getStorage,
+        ref,
+        uploadBytesResumable,
+        getDownloadURL,
+      } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+      const firebaseConfig = {
+        apiKey: "<API_KEY>",
+        authDomain: "<AUTH_DOMAIN>",
+        projectId: "<PROJECT_ID>",
+        storageBucket: "<STORAGE_BUCKET>",
+        messagingSenderId: "<MESSAGING_SENDER_ID>",
+        appId: "APP_ID",
+        measurementId: "MEASUREMENT_ID",
+      };
+
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const storage = getStorage(app);
+
+      document.getElementById("uploadButton").addEventListener("click", () => {
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
+
+        if (file) {
+          const storageRef = ref(storage, `/uploads/video.mp4`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => {
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              document.getElementById("statusMessage").innerText =
+                "Upload em andamento: " + progress + "%";
+            },
+            (error) => {
+              document.getElementById("statusMessage").innerText =
+                "Erro no upload: " + error.message;
+            },
+            () => {
+              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                document.getElementById("statusMessage").innerText =
+                  "Upload bem-sucedido! URL: " + downloadURL;
+              });
+            }
+          );
+        } else {
+          document.getElementById("statusMessage").innerText =
+            "Por favor, selecione um arquivo para fazer upload.";
+        }
+      });
+    </script>
+  </body>
+</html>
